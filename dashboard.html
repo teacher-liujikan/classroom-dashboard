@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班級學習備忘錄</title>
+<style>
+  :root{
+    --font-kai:'DFKai-SB','BiauKai','Kaiti TC','STKaiti','KaiTi',cursive,'Noto Sans TC',sans-serif;
+    --paper:#FFFCF3;
+    --yellow:#FFF3B0;
+    --yellow-deep:#F7E27A;
+    --yellow-border:#E4BE4A;
+    --green:#8FCB7E;
+    --green-deep:#5CA648;
+    --sky:#8FD8E8;
+    --sky-deep:#3FA8C0;
+    --pink:#FFB4C6;
+    --red:#FF7F66;
+    --red-deep:#D9532F;
+    --ink:#6B4A2B;
+    --ink-soft:#9A7B54;
+    --white:#FFFFFF;
+    --cell-line:#E4C77A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--font-kai);
+    color:var(--ink);
+    background:#3A2A18;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+
+  #tv-frame{
+    position:relative;
+    width:min(100vw, 177.78vh);
+    height:min(100vh, 56.25vw);
+    background:var(--paper);
+    background-image:radial-gradient(var(--yellow-border) 1px, transparent 1px);
+    background-size:26px 26px;
+    background-position:-6px -6px;
+    display:flex;
+    flex-direction:column;
+    border: clamp(6px,1.1vh,14px) solid var(--ink);
+    border-radius: clamp(14px,2vh,26px);
+    box-shadow: clamp(6px,1.1vh,14px) clamp(6px,1.1vh,14px) 0 var(--yellow-border);
+  }
+
+  .tv-header{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--yellow);
+    border-bottom: clamp(4px,0.8vh,10px) solid var(--ink);
+    padding: clamp(6px,1.2vh,14px) clamp(10px,1.5vw,20px);
+    position:relative;
+    overflow:hidden;
+  }
+  .tv-header::after{
+    content:"";
+    position:absolute;
+    right:-30px; top:-30px;
+    width:110px; height:110px;
+    background:var(--sky);
+    border-radius:50%;
+    opacity:.5;
+  }
+  .tv-header h1{
+    font-size: clamp(16px, 2.4vw, 30px);
+    position:relative;
+    z-index:1;
+    text-align:center;
+    letter-spacing:1px;
+  }
+
+  .board{
+    flex:1;
+    min-height:0;
+    display:flex;
+  }
+
+  /* ---------- 左欄 ---------- */
+  .left-col{
+    flex:0 0 34%;
+    display:flex;
+    flex-direction:column;
+    gap: clamp(8px,1.2vh,16px);
+    padding: clamp(10px,1.4vh,18px);
+    border-right: clamp(4px,0.8vh,10px) solid var(--ink);
+    min-height:0;
+    overflow:hidden;
+  }
+
+  .card{
+    background:var(--white);
+    border: clamp(2px,0.35vh,4px) solid var(--ink);
+    border-radius: clamp(12px,1.6vh,18px);
+    box-shadow: clamp(3px,0.5vh,6px) clamp(3px,0.5vh,6px) 0 var(--card-shadow, var(--yellow-border));
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    min-height:0;
+  }
+  .card.clock-card{ --card-shadow: var(--sky-deep); flex:0 0 auto; }
+  .card.next-card{ --card-shadow: var(--green-deep); flex:0 0 auto; }
+  .card.todo-card{ --card-shadow: var(--red-deep); flex:1; }
+
+  .card-label{
+    display:flex; align-items:center; gap:6px;
+    font-weight:700;
+    font-size: clamp(12px, 1.3vw, 17px);
+    padding: clamp(6px,1vh,10px) clamp(10px,1.2vw,14px);
+    border-bottom: clamp(2px,0.3vh,3px) solid var(--ink);
+  }
+  .card.clock-card .card-label{ background:var(--sky); }
+  .card.next-card .card-label{ background:var(--green); }
+  .card.todo-card .card-label{ background:var(--red); color:#fff; }
+
+  .card-body{
+    padding: clamp(8px,1.2vh,14px) clamp(10px,1.3vw,16px);
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* 時鐘（純數字顯示） */
+  .lcd-screen{
+    text-align:center;
+  }
+  .lcd-time{
+    font-family:'Courier New', Consolas, monospace;
+    font-weight:900;
+    font-size: clamp(28px, 4.2vw, 52px);
+    line-height:1;
+    color:#232E28;
+    letter-spacing:2px;
+  }
+  .lcd-ampm{
+    font-family:'Courier New', Consolas, monospace;
+    font-size:0.32em;
+    margin-left:6px;
+    color:#4A5850;
+    font-weight:700;
+    vertical-align:middle;
+  }
+  .clock-class{ margin-top:8px; font-size: clamp(11px,1vw,14px); color:var(--red-deep); font-weight:700; text-align:center; }
+  .aqi-line{ margin-top:6px; font-size: clamp(10.5px,0.95vw,13px); color:var(--ink-soft); font-weight:700; text-align:center; }
+
+  /* 下一節課 */
+  .next-subject{ font-size: clamp(18px, 2.2vw, 30px); font-weight:700; text-align:center; }
+  .next-status{ font-size: clamp(12px, 1.1vw, 15px); color:var(--sky-deep); font-weight:700; margin-top:4px; text-align:center; }
+  .next-time{ margin-top:auto; padding-top:6px; font-size: clamp(12px,1.1vw,15px); color:var(--red-deep); font-weight:700; text-align:center; }
+
+  /* 代辦 */
+  .todo-list{ list-style:none; overflow-y:auto; flex:1; }
+  .todo-list li{ display:flex; align-items:center; gap:8px; font-size: clamp(13px,1.2vw,17px); padding:5px 0; border-bottom:1px dashed var(--cell-line); }
+  .todo-list li.done{ text-decoration:line-through; opacity:0.5; }
+  .todo-check{
+    width: clamp(16px,1.6vh,22px); height: clamp(16px,1.6vh,22px);
+    border:2px solid var(--ink); flex-shrink:0; cursor:pointer; border-radius:5px;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+    background:#FFFDF3;
+  }
+  .todo-list li.done .todo-check{ background:var(--green); color:#fff; }
+  .empty-hint{ font-size: clamp(12px,1.1vw,15px); color:var(--ink-soft); flex:1; display:flex; align-items:center; justify-content:center; text-align:center; }
+
+  /* ---------- 右欄：嵌入聯絡本 ---------- */
+  .right-col{
+    flex:1;
+    min-width:0;
+    background:var(--paper);
+  }
+  .right-col iframe{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
+
+  /* ---------- 齒輪按鈕 ---------- */
+  #gearBtn{
+    position:absolute; top: 1.2%; right: 1%;
+    width: clamp(26px,3.6vh,40px); height: clamp(26px,3.6vh,40px);
+    background: var(--yellow); border: 2px solid var(--ink);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size: clamp(13px,1.8vh,18px);
+    z-index:30; transition: transform .3s;
+  }
+  #gearBtn:hover{ transform: rotate(60deg); }
+
+  /* ---------- 編輯面板 ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .overlay.show{ display:flex; }
+  .editor{
+    background:var(--paper); width:min(720px,96vw); max-height:90vh;
+    display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    font-family:var(--font-kai); border:3px solid var(--ink); border-radius:18px; overflow:hidden;
+  }
+  .editor-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--yellow); border-bottom:3px solid var(--ink); }
+  .editor-head h2{ font-size:19px; font-weight:700; }
+  .editor-close{ cursor:pointer; font-size:20px; background:none; border:none; color:var(--ink); }
+  .tabs{ display:flex; gap:6px; padding:12px 20px 0; flex-wrap:wrap; }
+  .tab-btn{ padding:7px 14px; border:2px solid var(--ink); border-radius:999px; cursor:pointer; background:var(--white); font-size:13px; font-weight:700; color:var(--ink-soft); font-family:var(--font-kai); }
+  .tab-btn.active{ background:var(--green); color:#1c4a12; }
+  .tab-panel{ display:none; padding:18px 20px; overflow-y:auto; }
+  .tab-panel.active{ display:block; }
+
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:5px; }
+  .field input[type=text], .field input[type=time], .field select{
+    width:100%; padding:8px 10px; border:2px solid var(--yellow-border); border-radius:10px; font-family:var(--font-kai); font-size:14px; background:#FFFDF3;
+  }
+  .hint{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
+
+  .day-tabs{ display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .day-tab{ padding:6px 12px; border:2px solid var(--yellow-border); border-radius:999px; background:#fff; cursor:pointer; font-size:12px; font-family:var(--font-kai); }
+  .day-tab.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .period-row{ display:flex; gap:8px; align-items:center; margin-bottom:7px; }
+  .period-row .p-label{ width:52px; font-size:12px; color:var(--ink-soft); flex-shrink:0; }
+  .period-row input[type=time]{ width:120px; flex-shrink:0; }
+
+  .row-flex{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .row-flex input[type=text]{ flex:1; }
+  .icon-btn{ width:30px; height:30px; border:2px solid var(--ink); border-radius:8px; cursor:pointer; background:#fff; color:var(--ink); font-size:14px; flex-shrink:0; }
+  .icon-btn.danger{ background:var(--red); color:#fff; }
+  .add-btn{ margin-top:4px; padding:8px 16px; border:2px solid var(--green-deep); border-radius:999px; cursor:pointer; background:rgba(143,203,126,0.2); color:var(--green-deep); font-size:13px; font-weight:700; font-family:var(--font-kai); }
+
+  .editor-foot{ padding:12px 20px; border-top:3px solid var(--ink); display:flex; justify-content:flex-end; gap:10px; background:var(--yellow); }
+  .btn-save{ padding:9px 20px; border:2px solid var(--ink); border-radius:999px; cursor:pointer; background: var(--green); color:#1c4a12; font-weight:700; font-size:13px; font-family:var(--font-kai); }
+  .btn-plain{ padding:9px 16px; border:2px solid var(--ink); border-radius:999px; cursor:pointer; background:transparent; color:var(--ink); font-size:13px; font-family:var(--font-kai); }
+  .save-toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--paper); padding:9px 18px; border-radius:999px; font-size:13px;
+    opacity:0; transition:all .3s; z-index:200; pointer-events:none;
+  }
+  .save-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+  <div id="tv-frame">
+    <div class="tv-header"><h1 id="headerTitle">班級學習備忘錄</h1></div>
+    <div class="board">
+      <div class="left-col">
+        <div class="card clock-card">
+          <div class="card-label">🕐 電子時鐘</div>
+          <div class="card-body">
+            <div class="lcd-screen">
+              <div class="lcd-time"><span id="timeStr">--:--</span><span class="lcd-ampm" id="ampmStr">--</span></div>
+            </div>
+            <div class="aqi-line" id="aqiLine">🌫️ 空氣品質載入中…</div>
+          </div>
+        </div>
+        <div class="card next-card">
+          <div class="card-label">🐾 下一節課是</div>
+          <div class="card-body" id="nextPeriodBody"></div>
+        </div>
+        <div class="card todo-card">
+          <div class="card-label">📋 代辦事項</div>
+          <div class="card-body"><ul class="todo-list" id="todoList"></ul></div>
+        </div>
+      </div>
+      <div class="right-col">
+        <iframe src="index.html" title="電子聯絡本"></iframe>
+      </div>
+    </div>
+    <div id="gearBtn" title="編輯左側內容">⚙️</div>
+  </div>
+
+  <!-- ============ 編輯面板（僅左側：時鐘/課表/代辦） ============ -->
+  <div class="overlay" id="overlay">
+    <div class="editor">
+      <div class="editor-head">
+        <h2>編輯左側面板</h2>
+        <button class="editor-close" id="closeEditor">✕</button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+
+      <div class="tab-panel active" data-panel="basic">
+        <div class="field">
+          <label>班級名稱</label>
+          <input type="text" id="in-className" placeholder="例如：三年甲班">
+        </div>
+        <div class="field">
+          <label>每節上課時間（用於「下一節課是」自動計算）</label>
+          <div id="periodTimesWrap"></div>
+          <div class="hint">預設每節 40 分鐘，只需設定各節「開始時間」。</div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="schedule">
+        <div class="day-tabs" id="dayTabs"></div>
+        <div id="scheduleInputs"></div>
+      </div>
+
+      <div class="tab-panel" data-panel="todo">
+        <div class="field">
+          <label>代辦事項</label>
+          <div id="todoInputs"></div>
+          <button class="add-btn" id="addTodo">＋ 新增代辦</button>
+        </div>
+      </div>
+
+      <div class="editor-foot">
+        <button class="btn-plain" id="cancelEdit">取消</button>
+        <button class="btn-save" id="saveEdit">儲存並套用</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-toast" id="saveToast">已儲存 ✓</div>
+
+<script>
+/* ================= 預設資料 ================= */
+const WEEKDAYS = ['一','二','三','四','五'];
+
+function defaultState(){
+  return {
+    className: '三年甲班',
+    periodTimes: ['08:10','09:00','09:50','10:50','11:40','13:30','14:20','15:10'],
+    schedule: {
+      1: ['國語','數學','自然','社會','英語','','',''],
+      2: ['數學','國語','體育','音樂','綜合','','',''],
+      3: ['國語','自然','數學','美勞','彈性','','',''],
+      4: ['英語','社會','國語','數學','班會','','',''],
+      5: ['數學','國語','自然','體育','綜合','','','']
+    },
+    todos: [ {text:'發放聯絡簿', done:false}, {text:'收體育服', done:false} ]
+  };
+}
+
+let state = defaultState();
+let editState = null;
+let currentDayTab = (()=>{ const d=new Date().getDay(); return (d>=1&&d<=5)?String(d):'1'; })();
+
+/* ================= 儲存 / 讀取（本機儲存，僅此裝置） ================= */
+const STORAGE_KEY = 'contact-dashboard-left-state-v1';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = Object.assign(defaultState(), JSON.parse(raw)); }
+  }catch(e){ state = defaultState(); }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); showToast(); }
+  catch(e){ console.error('儲存失敗', e); }
+}
+function showToast(msg){
+  const t = document.getElementById('saveToast');
+  t.textContent = msg || '已儲存 ✓';
+  t.classList.add('show');
+  setTimeout(()=>{ t.classList.remove('show'); t.textContent = '已儲存 ✓'; }, 2200);
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function periodMinutes(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+
+/* ================= 網路時間校正 ================= */
+let timeOffset = 0;
+async function syncNetworkTime(){
+  try{
+    const res = await fetch('https://worldtimeapi.org/api/timezone/Asia/Taipei');
+    const data = await res.json();
+    timeOffset = new Date(data.datetime).getTime() - Date.now();
+  }catch(e){
+    timeOffset = 0;
+  }
+}
+function getNow(){ return new Date(Date.now() + timeOffset); }
+
+/* ================= 台南市空氣品質 ================= */
+const AQI_STATUS_EMOJI = {
+  '良好': '😄',
+  '普通': '🙂',
+  '對敏感族群不健康': '😟',
+  '對所有族群不健康': '😣',
+  '非常不健康': '😫',
+  '危害': '🤢'
+};
+async function fetchAirQuality(){
+  const el = document.getElementById('aqiLine');
+  try{
+    const res = await fetch('https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=af57253c-e838-46da-a1f5-12b43afd75f3&limit=1000&format=JSON');
+    const list = await res.json();
+    const station = list.find(r=> r.county==='臺南市' && r.sitename==='臺南') || list.find(r=> r.county==='臺南市');
+    if(!station || !station.aqi){ el.textContent = '🌫️ 目前查不到台南市空氣品質'; return; }
+    const emoji = AQI_STATUS_EMOJI[station.status] || '❓';
+    el.textContent = `🌫️ 台南市 AQI ${station.aqi}．${station.status} ${emoji}`;
+  }catch(e){
+    el.textContent = '🌫️ 空氣品質資料取得失敗（請確認網路連線）';
+  }
+}
+
+/* ================= 時鐘 + 下一節課 ================= */
+function updateClock(){
+  const now = getNow();
+  const h24 = now.getHours();
+  const ampm = h24>=12 ? 'PM' : 'AM';
+  let h12 = h24 % 12; if(h12===0) h12 = 12;
+  document.getElementById('timeStr').textContent = `${h12}:${pad(now.getMinutes())}`;
+  document.getElementById('ampmStr').textContent = ampm;
+  renderNextPeriod(now);
+}
+
+function getPeriodInfo(now){
+  const wd = now.getDay();
+  const dayKey = (wd>=1&&wd<=5) ? wd : null;
+  if(!dayKey) return {status:'holiday'};
+  const subjects = state.schedule[dayKey] || [];
+  const nowMin = now.getHours()*60+now.getMinutes();
+  for(let i=0;i<8;i++){
+    const start = periodMinutes(state.periodTimes[i]||'08:00');
+    const end = start+40;
+    if(nowMin>=start && nowMin<end){
+      return {status:'in-class', idx:i, subject:subjects[i]||'（未排課）', remain:end-nowMin};
+    }
+    if(nowMin<start){
+      return {status:'upcoming', idx:i, subject:subjects[i]||'（未排課）', remain:start-nowMin};
+    }
+  }
+  return {status:'done'};
+}
+
+function renderNextPeriod(now){
+  const el = document.getElementById('nextPeriodBody');
+  const info = getPeriodInfo(now || getNow());
+  if(info.status==='holiday'){
+    el.innerHTML = `<div class="next-subject">今天不用上課！</div><div class="next-status">好好休息一下吧 🌤️</div>`;
+  } else if(info.status==='done'){
+    el.innerHTML = `<div class="next-subject">今日課程結束</div><div class="next-status">辛苦了 🎒</div>`;
+  } else if(info.status==='in-class'){
+    el.innerHTML = `<div class="next-subject">${escapeHtml(info.subject)}</div>
+      <div class="next-status">上課中・第 ${info.idx+1} 節</div>
+      <div class="next-time">還有 ${info.remain} 分下課</div>`;
+  } else {
+    el.innerHTML = `<div class="next-subject">${escapeHtml(info.subject)}</div>
+      <div class="next-status">第 ${info.idx+1} 節・下課中</div>
+      <div class="next-time">${info.remain} 分後上課</div>`;
+  }
+}
+
+/* ================= 代辦事項 ================= */
+function render(){
+  renderTodo();
+}
+
+function renderTodo(){
+  const list = document.getElementById('todoList');
+  if(state.todos.length===0){ list.innerHTML = `<div class="empty-hint">目前沒有代辦事項</div>`; return; }
+  list.innerHTML = state.todos.map((t,i)=>`
+    <li class="${t.done?'done':''}" data-i="${i}">
+      <span class="todo-check">${t.done?'✓':''}</span><span>${escapeHtml(t.text)}</span>
+    </li>`).join('');
+  list.querySelectorAll('.todo-check').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      const i = Number(e.target.closest('li').dataset.i);
+      state.todos[i].done = !state.todos[i].done;
+      saveState(); renderTodo();
+    });
+  });
+}
+
+/* ================= 編輯面板 ================= */
+const TAB_LIST = [
+  {id:'basic', label:'班級 / 時間'},
+  {id:'schedule', label:'課表'},
+  {id:'todo', label:'代辦'}
+];
+
+function buildTabs(){
+  const wrap = document.getElementById('tabs');
+  wrap.innerHTML = TAB_LIST.map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" data-tab="${t.id}">${t.label}</button>`).join('');
+  wrap.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      wrap.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelector(`.tab-panel[data-panel="${btn.dataset.tab}"]`).classList.add('active');
+    });
+  });
+}
+
+function openEditor(){
+  editState = JSON.parse(JSON.stringify(state));
+  document.getElementById('in-className').value = editState.className;
+
+  const ptWrap = document.getElementById('periodTimesWrap');
+  ptWrap.innerHTML = editState.periodTimes.map((t,i)=>`<div class="period-row"><span class="p-label">第${i+1}節</span><input type="time" data-pt="${i}" value="${t}"></div>`).join('');
+  ptWrap.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', ()=>{ editState.periodTimes[inp.dataset.pt]=inp.value; }));
+
+  buildDayTabs(); renderScheduleEditor();
+  renderTodoEditor();
+
+  document.getElementById('overlay').classList.add('show');
+}
+
+function buildDayTabs(){
+  const wrap = document.getElementById('dayTabs');
+  wrap.innerHTML = [1,2,3,4,5].map(d=>`<div class="day-tab ${d==currentDayTab?'active':''}" data-day="${d}">星期${WEEKDAYS[d-1]}</div>`).join('');
+  wrap.querySelectorAll('.day-tab').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      currentDayTab = el.dataset.day;
+      wrap.querySelectorAll('.day-tab').forEach(b=>b.classList.remove('active'));
+      el.classList.add('active');
+      renderScheduleEditor();
+    });
+  });
+}
+function renderScheduleEditor(){
+  const wrap = document.getElementById('scheduleInputs');
+  const subjects = editState.schedule[currentDayTab] || Array(8).fill('');
+  wrap.innerHTML = subjects.map((s,i)=>`<div class="period-row"><span class="p-label">第${i+1}節</span><input type="text" data-si="${i}" value="${escapeHtml(s)}" placeholder="科目名稱（留空表示無課）"></div>`).join('');
+  wrap.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', ()=>{ editState.schedule[currentDayTab][inp.dataset.si]=inp.value; }));
+}
+
+function renderTodoEditor(){
+  const wrap = document.getElementById('todoInputs');
+  wrap.innerHTML = editState.todos.map((t,i)=>`<div class="row-flex"><input type="text" data-ti="${i}" value="${escapeHtml(t.text)}"><button class="icon-btn danger" data-del="${i}">✕</button></div>`).join('');
+  wrap.querySelectorAll('input').forEach(inp=>inp.addEventListener('input', ()=>{ editState.todos[inp.dataset.ti].text=inp.value; }));
+  wrap.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click', ()=>{ editState.todos.splice(Number(btn.dataset.del),1); renderTodoEditor(); }));
+}
+document.getElementById('addTodo').addEventListener('click', ()=>{ editState.todos.push({text:'',done:false}); renderTodoEditor(); });
+
+function closeEditor(){ document.getElementById('overlay').classList.remove('show'); }
+document.getElementById('gearBtn').addEventListener('click', openEditor);
+document.getElementById('closeEditor').addEventListener('click', closeEditor);
+document.getElementById('cancelEdit').addEventListener('click', closeEditor);
+document.getElementById('overlay').addEventListener('click', (e)=>{ if(e.target.id==='overlay') closeEditor(); });
+
+document.getElementById('saveEdit').addEventListener('click', ()=>{
+  editState.className = document.getElementById('in-className').value || '未命名班級';
+  editState.todos = editState.todos.filter(t=>t.text.trim()!=='');
+
+  state = editState;
+  saveState();
+  render();
+  closeEditor();
+});
+
+/* ================= 初始化 ================= */
+buildTabs();
+loadState();
+(async ()=>{
+  await syncNetworkTime();
+  render();
+  updateClock();
+  fetchAirQuality();
+  setInterval(updateClock, 1000);
+  setInterval(syncNetworkTime, 30 * 60 * 1000);
+  setInterval(fetchAirQuality, 15 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
